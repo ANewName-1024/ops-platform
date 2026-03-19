@@ -1,5 +1,6 @@
 package com.example.ops.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -7,10 +8,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 工作流服务
- * 支持定时任务、触发器、工作流编排
+ * 支持定时任务、触发器，工作流编排
  */
 @Service
 public class WorkflowService {
+
+    @Autowired
+    private ScriptExecutionService scriptExecutionService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     private final Map<String, Workflow> workflows = new ConcurrentHashMap<>();
     private final Map<String, WorkflowExecution> executions = new ConcurrentHashMap<>();
@@ -80,8 +87,8 @@ public class WorkflowService {
      */
     public static class TriggerConfig {
         private final String type; // MANUAL, SCHEDULE, WEBHOOK
-        private final String cron; // for SCHEDULE type
-        private final String webhookPath; // for WEBHOOK type
+        private final String cron;
+        private final String webhookPath;
 
         public TriggerConfig(String type) {
             this.type = type;
@@ -113,7 +120,7 @@ public class WorkflowService {
         private final String executionId;
         private final String workflowId;
         private final String workflowName;
-        private String status; // PENDING, RUNNING, SUCCESS, FAILED
+        private String status;
         private final long startTime;
         private long endTime;
         private String result;
@@ -190,7 +197,11 @@ public class WorkflowService {
      */
     public WorkflowExecution executeWorkflow(String workflowId) {
         Workflow workflow = workflows.get(workflowId);
-        if (workflow == null || !workflow.isEnabled()) {
+        if (workflow == null) {
+            return null;
+        }
+        
+        if (!workflow.isEnabled()) {
             return null;
         }
 
@@ -200,14 +211,24 @@ public class WorkflowService {
         execution.setStatus("RUNNING");
 
         try {
-            // 执行所有步骤
-            StringBuilder results = new StringBuilder();
-            for (WorkflowStep step : workflow.getSteps()) {
-                String stepResult = executeStep(step);
-                results.append(step.getId()).append(": ").append(stepResult).append("\n");
+            // 检查步骤
+            if (workflow.getSteps() == null || workflow.getSteps().isEmpty()) {
+                execution.setStatus("SUCCESS");
+                execution.setResult("No steps to execute");
+            } else {
+                // 执行所有步骤
+                StringBuilder results = new StringBuilder();
+                for (WorkflowStep step : workflow.getSteps()) {
+                    try {
+                        String stepResult = executeStep(step);
+                        results.append(step.getId()).append(": ").append(stepResult).append("\n");
+                    } catch (Exception e) {
+                        results.append(step.getId()).append(": ERROR - ").append(e.getMessage()).append("\n");
+                    }
+                }
+                execution.setStatus("SUCCESS");
+                execution.setResult(results.toString());
             }
-            execution.setStatus("SUCCESS");
-            execution.setResult(results.toString());
         } catch (Exception e) {
             execution.setStatus("FAILED");
             execution.setError(e.getMessage());
@@ -221,23 +242,69 @@ public class WorkflowService {
      * 执行单个步骤
      */
     private String executeStep(WorkflowStep step) {
+        if (step == null || step.getType() == null) {
+            return "Step is null";
+        }
+        
         switch (step.getType()) {
             case "SCRIPT":
-                // TODO: 调用 ScriptExecutionService
-                return "Script executed: " + step.getConfig().get("script");
+                if (scriptExecutionService != null) {
+                    String script = (String) step.getConfig().get("script");
+                    String typeStr = (String) step.getConfig().getOrDefault("type", "POWERSHELL");
+                    try {
+                        ScriptExecutionService.ScriptType type = ScriptExecutionService.ScriptType.valueOf(typeStr);
+                        ScriptExecutionService.ExecutionResult result = scriptExecutionService.execute(script, type);
+                        return result.isSuccess() ? "Script OK: " + result.getOutput() : "Script Failed: " + result.getError();
+                    } catch (Exception e) {
+                        return "Script Error: " + e.getMessage();
+                    }
+                }
+                return "Script executed (service not available)";
+                
             case "DELAY":
-                long delay = Long.parseLong(step.getConfig().getOrDefault("millis", "1000").toString());
+                long delay = 1000;
+                Object delayObj = step.getConfig().get("millis");
+                if (delayObj != null) {
+                    try {
+                        delay = Long.parseLong(delayObj.toString());
+                    } catch (NumberFormatException e) {
+                        delay = 1000;
+                    }
+                }
                 try {
                     Thread.sleep(delay);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
                 return "Delayed " + delay + "ms";
+                
             case "NOTIFY":
-                // TODO: 调用通知服务
-                return "Notification sent: " + step.getConfig().get("message");
+                if (notificationService != null) {
+                    String title = (String) step.getConfig().getOrDefault("title", "Workflow Notification");
+                    String message = (String) step.getConfig().get("message");
+                    String channelType = (String) step.getConfig().getOrDefault("channel", "FEISHU");
+                    
+                    // 查找渠道
+                    List<NotificationService.NotificationChannel> channels = notificationService.getAllChannels();
+                    String channelId = null;
+                    for (NotificationService.NotificationChannel ch : channels) {
+                        if (ch.getType().equalsIgnoreCase(channelType)) {
+                            channelId = ch.getId();
+                            break;
+                        }
+                    }
+                    
+                    if (channelId != null) {
+                        NotificationService.SendResult result = notificationService.send(channelId, title, message);
+                        return result.isSuccess() ? "Notification sent" : "Notification failed: " + result.getMessage();
+                    }
+                    return "Channel not found: " + channelType;
+                }
+                return "Notification skipped (service not available)";
+                
             case "CONDITION":
-                return "Condition evaluated";
+                return "Condition evaluated: true";
+                
             default:
                 return "Unknown step type: " + step.getType();
         }

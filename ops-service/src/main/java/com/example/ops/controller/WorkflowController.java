@@ -129,16 +129,25 @@ public class WorkflowController {
      */
     @PostMapping("/{id}/execute")
     public Map<String, Object> executeWorkflow(@PathVariable String id) {
-        WorkflowService.WorkflowExecution execution = workflowService.executeWorkflow(id);
-        
         Map<String, Object> result = new HashMap<>();
-        if (execution != null) {
-            result.put("success", true);
-            result.put("executionId", execution.getExecutionId());
-            result.put("status", execution.getStatus());
-        } else {
+        try {
+            WorkflowService.WorkflowExecution execution = workflowService.executeWorkflow(id);
+            
+            if (execution != null) {
+                result.put("success", true);
+                result.put("executionId", execution.getExecutionId());
+                result.put("status", execution.getStatus());
+                result.put("result", execution.getResult());
+                if (execution.getError() != null) {
+                    result.put("error", execution.getError());
+                }
+            } else {
+                result.put("success", false);
+                result.put("message", "Workflow not found or disabled");
+            }
+        } catch (Exception e) {
             result.put("success", false);
-            result.put("message", "Workflow not found or disabled");
+            result.put("message", "Execution error: " + e.getMessage());
         }
         return result;
     }
