@@ -9,6 +9,7 @@
 | **版本** | 1.0.0-SNAPSHOT |
 | **描述** | 企业级智能运维平台 |
 | **技术栈** | Spring Cloud, Java 21, PostgreSQL, Prometheus |
+| **许可证** | 商业授权 (LICENSE_COMMERCIAL) |
 
 ## 2. 功能需求
 
