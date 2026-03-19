@@ -21,46 +21,21 @@ public class WorkflowController {
      */
     @PostMapping
     public Map<String, Object> createWorkflow(@RequestBody Map<String, Object> request) {
-        String name = (String) request.get("name");
+        String name = (String) request.getOrDefault("name", "Untitled");
         String description = (String) request.getOrDefault("description", "");
         
-        // 解析步骤
-        List<WorkflowService.WorkflowStep> steps = new ArrayList<>();
-        if (request.containsKey("steps")) {
-            List<Map<String, Object>> stepConfigs = (List<Map<String, Object>>) request.get("steps");
-            for (Map<String, Object> stepConfig : stepConfigs) {
-                String type = (String) stepConfig.get("type");
-                Map<String, Object> config = (Map<String, Object>) stepConfig.getOrDefault("config", new HashMap<>());
-                WorkflowService.WorkflowStep step = new WorkflowService.WorkflowStep(type, config);
-                steps.add(step);
-            }
-        }
-
-        // 解析触发器
-        WorkflowService.TriggerConfig trigger = null;
-        if (request.containsKey("trigger")) {
-            Map<String, Object> triggerConfig = (Map<String, Object>) request.get("trigger");
-            String triggerType = (String) triggerConfig.get("type");
-            String cron = (String) triggerConfig.getOrDefault("cron", null);
-            String webhookPath = (String) triggerConfig.getOrDefault("webhookPath", null);
-            
-            if (cron != null) {
-                trigger = new WorkflowService.TriggerConfig(triggerType, cron);
-            } else if (webhookPath != null) {
-                trigger = new WorkflowService.TriggerConfig(triggerType, null, webhookPath);
-            } else {
-                trigger = new WorkflowService.TriggerConfig(triggerType);
-            }
-        } else {
-            trigger = new WorkflowService.TriggerConfig("MANUAL");
-        }
-
-        WorkflowService.Workflow workflow = workflowService.createWorkflow(name, description, steps, trigger);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> steps = (List<Map<String, Object>>) request.get("steps");
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> trigger = (Map<String, Object>) request.get("trigger");
+        
+        WorkflowService.WorkflowDefinition wf = workflowService.createWorkflow(name, description, steps, trigger);
 
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
-        result.put("workflowId", workflow.getId());
-        result.put("name", workflow.getName());
+        result.put("workflowId", wf.getId());
+        result.put("name", wf.getName());
         result.put("status", "created");
         return result;
     }
@@ -70,11 +45,11 @@ public class WorkflowController {
      */
     @GetMapping
     public Map<String, Object> getWorkflows() {
-        List<WorkflowService.Workflow> workflows = workflowService.getAllWorkflows();
+        List<WorkflowService.WorkflowDefinition> wfs = workflowService.getAllWorkflows();
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
-        result.put("workflows", workflows);
-        result.put("total", workflows.size());
+        result.put("workflows", wfs);
+        result.put("total", wfs.size());
         return result;
     }
 
@@ -83,11 +58,11 @@ public class WorkflowController {
      */
     @GetMapping("/{id}")
     public Map<String, Object> getWorkflow(@PathVariable String id) {
-        WorkflowService.Workflow workflow = workflowService.getWorkflow(id);
+        WorkflowService.WorkflowDefinition wf = workflowService.getWorkflow(id);
         Map<String, Object> result = new HashMap<>();
-        if (workflow != null) {
+        if (wf != null) {
             result.put("success", true);
-            result.put("workflow", workflow);
+            result.put("workflow", wf);
         } else {
             result.put("success", false);
             result.put("message", "Workflow not found");
@@ -103,24 +78,7 @@ public class WorkflowController {
         boolean success = workflowService.deleteWorkflow(id);
         Map<String, Object> result = new HashMap<>();
         result.put("success", success);
-        result.put("message", success ? "Workflow deleted" : "Failed to delete");
-        return result;
-    }
-
-    /**
-     * 启用/禁用工作流
-     */
-    @PutMapping("/{id}/enable")
-    public Map<String, Object> setWorkflowEnabled(
-            @PathVariable String id,
-            @RequestBody Map<String, Boolean> request) {
-        
-        boolean enabled = request.getOrDefault("enabled", true);
-        boolean success = workflowService.setWorkflowEnabled(id, enabled);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", success);
-        result.put("enabled", enabled);
+        result.put("message", success ? "Deleted" : "Not found");
         return result;
     }
 
@@ -131,23 +89,19 @@ public class WorkflowController {
     public Map<String, Object> executeWorkflow(@PathVariable String id) {
         Map<String, Object> result = new HashMap<>();
         try {
-            WorkflowService.WorkflowExecution execution = workflowService.executeWorkflow(id);
-            
-            if (execution != null) {
+            WorkflowService.ExecutionRecord rec = workflowService.executeWorkflow(id);
+            if (rec != null) {
                 result.put("success", true);
-                result.put("executionId", execution.getExecutionId());
-                result.put("status", execution.getStatus());
-                result.put("result", execution.getResult());
-                if (execution.getError() != null) {
-                    result.put("error", execution.getError());
-                }
+                result.put("executionId", rec.getExecutionId());
+                result.put("status", rec.getStatus());
+                result.put("result", rec.getResult());
             } else {
                 result.put("success", false);
-                result.put("message", "Workflow not found or disabled");
+                result.put("message", "Not found or disabled");
             }
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", "Execution error: " + e.getMessage());
+            result.put("message", e.getMessage());
         }
         return result;
     }
@@ -157,11 +111,11 @@ public class WorkflowController {
      */
     @GetMapping("/{id}/executions")
     public Map<String, Object> getExecutions(@PathVariable String id) {
-        List<WorkflowService.WorkflowExecution> executions = workflowService.getExecutions(id);
+        List<WorkflowService.ExecutionRecord> recs = workflowService.getExecutions(id);
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
-        result.put("executions", executions);
-        result.put("total", executions.size());
+        result.put("executions", recs);
+        result.put("total", recs.size());
         return result;
     }
 
@@ -170,14 +124,14 @@ public class WorkflowController {
      */
     @GetMapping("/executions/{executionId}")
     public Map<String, Object> getExecution(@PathVariable String executionId) {
-        WorkflowService.WorkflowExecution execution = workflowService.getExecution(executionId);
+        WorkflowService.ExecutionRecord rec = workflowService.getExecution(executionId);
         Map<String, Object> result = new HashMap<>();
-        if (execution != null) {
+        if (rec != null) {
             result.put("success", true);
-            result.put("execution", execution);
+            result.put("execution", rec);
         } else {
             result.put("success", false);
-            result.put("message", "Execution not found");
+            result.put("message", "Not found");
         }
         return result;
     }
