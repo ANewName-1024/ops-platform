@@ -56,7 +56,7 @@ mvn spring-boot:run
 | 中型企业 (51-200人) | ¥ 80,000/年 |
 | 大型企业 (201-500人) | ¥ 150,000/年 |
 
-**联系我们：** business@openclaw.ai
+**联系我们：** https://github.com/ANewName-1024
 
 ## 文档
 
