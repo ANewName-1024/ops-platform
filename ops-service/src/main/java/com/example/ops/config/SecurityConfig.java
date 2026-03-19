@@ -46,6 +46,8 @@ public class SecurityConfig {
                 .requestMatchers("/ops/workflows/**").permitAll()
                 // 通知 (开发测试期间公开)
                 .requestMatchers("/ops/notifications/**").permitAll()
+                // 知识库 (开发测试期间公开)
+                .requestMatchers("/ops/knowledge/**").permitAll()
                 // 监控数据 (需要 ops:view 权限)
                 .requestMatchers("/ops/metrics").hasAuthority("ops:view")
                 // 告警管理 (需要 ops:manage 权限)
