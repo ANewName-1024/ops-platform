@@ -1,90 +1,73 @@
-# README - Spring Cloud Demo
+# OpenClaw Ops Platform
 
-## 项目简介
+**企业级智能运维平台**
 
-Spring Cloud 微服务架构演示项目，包含配置中心、服务注册、API网关、用户服务等功能。
+[![License](https://img.shields.io/badge/license-Commercial-blue.svg)](LICENSE_COMMERCIAL)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](REQUIREMENTS.md)
 
-## 技术栈
+## 简介
 
-| 组件 | 版本 |
-|------|------|
-| Spring Boot | 3.5.0 |
-| Spring Cloud | 2025.0.0 |
-| Spring Cloud Alibaba | 2023.0.1.2 |
-| Nacos | 2.3.2 (可选) |
-| PostgreSQL | 11.15 |
-| Java | 21 |
-
-## 项目结构
-
-```
-springcloud-demo/
-├── common/              # 公共模块
-├── gateway/            # API 网关 (8080)
-├── user-service/        # 用户服务 (8081)
-├── config-service/       # 配置服务 (8082)
-├── ops-service/         # 运维服务 (8083)
-├── eureka-server/       # Eureka 服务 (已废弃)
-└── docs/               # 设计文档
-```
-
-## 快速开始
-
-### 本地模式 (无需 Nacos)
-
-```bash
-# 编译项目
-mvn clean compile
-
-# 启动服务 (按顺序)
-mvn -f config-service/pom.xml spring-boot:run
-mvn -f user-service/pom.xml spring-boot:run  
-mvn -f gateway/pom.xml spring-boot:run
-```
-
-服务端口:
-- Gateway: http://localhost:8080
-- User Service: http://localhost:8081
-- Config Service: http://localhost:8082
-- Ops Service: http://localhost:8083
-
-### Nacos 模式 (可选)
-
-```bash
-# 启动 Nacos
-docker run -d --name nacos -p 8848:8848 -e MODE=standalone nacos/nacos-server:v2.3.2
-
-# 启用 Nacos
-export NACOS_ENABLED=true
-
-# 重启服务
-```
+OpenClaw Ops Platform 是一款企业级智能运维平台，提供监控、告警、运维调度、自动修复、灰度发布、权限管理等核心功能。
 
 ## 功能特性
 
-- [x] API 网关 (路由、鉴权)
-- [x] 用户服务 (RBAC、OIDC)
-- [x] 配置服务 (REST API、国密加密)
-- [x] 运维服务 (告警、监控)
-- [x] Nacos 集成 (可选)
-- [ ] 配置动态刷新
+- 📊 **监控模块** - JVM/数据库/系统指标采集，Prometheus 存储，Grafana 可视化
+- 🔔 **告警系统** - 阈值/趋势告警规则，多渠道通知
+- ⚙️ **运维调度** - 定时/延迟任务，Shell/PowerShell 脚本执行
+- 🔧 **自动修复** - 自愈策略引擎，故障自动恢复
+- 🚀 **灰度发布** - 流量调控，版本管理，快速回滚
+- 🔐 **权限管理** - RBAC 角色权限模型
+
+## 技术栈
+
+- Java 21 + Spring Boot 3.4.0
+- Spring Cloud 微服务
+- PostgreSQL 数据库
+- Prometheus + Grafana
+- ELK (Elasticsearch + Logstash + Kibana)
+
+## 快速开始
+
+```bash
+# 克隆项目
+git clone https://github.com/openclaw/ops-platform.git
+
+# 编译
+mvn clean package
+
+# 启动服务
+cd ops-service
+mvn spring-boot:run
+```
+
+访问 http://localhost:8083
+
+## 许可证
+
+### 非商业用途
+本软件采用 **Apache 2.0** 开源许可证（仅限非商业用途）。
+
+### 商业用途
+**商业使用需要付费授权。** 请查看 [LICENSE_COMMERCIAL](LICENSE_COMMERCIAL) 了解详情。
+
+| 企业规模 | 年度许可费 |
+|----------|------------|
+| 小型企业 (1-50人) | ¥ 30,000/年 |
+| 中型企业 (51-200人) | ¥ 80,000/年 |
+| 大型企业 (201-500人) | ¥ 150,000/年 |
+
+**联系我们：** business@openclaw.ai
 
 ## 文档
 
-详见 `docs/` 目录:
+- [需求列表](REQUIREMENTS.md)
+- [权限模型](docs/PERMISSION_MODEL.md)
+- [API 文档](API.md)
 
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - 架构设计
-- [NACOS_INTEGRATION.md](docs/NACOS_INTEGRATION.md) - Nacos 集成
-- [nacos/](docs/nacos/) - Nacos 详细文档
+## 版本
 
-## 升级记录
+- **v1.0.0** - 首个正式版本 (2026-03-19)
 
-| 日期 | 版本 | 变更 |
-|------|------|------|
-| 2026-03-18 | 2.1.0 | 集成 Nacos，移除 Eureka |
-| 2026-03-18 | 2.0.0 | 升级 Spring Boot 3.5.0 |
-| 2026-03-17 | 1.0.0 | 初始版本 |
+---
 
-## License
-
-MIT
+© 2026 OpenClaw Team. All Rights Reserved.
