@@ -38,8 +38,8 @@ public class KnowledgeBaseController {
         return result;
     }
 
-    @GetMapping("/bases/{id}")
-    public Map<String, Object> getKnowledgeBase(@PathVariable String id) {
+    @GetMapping("/bases/{kbId}")
+    public Map<String, Object> getKnowledgeBase(@PathVariable("id") String id) {
         KnowledgeBaseService.KnowledgeBase kb = knowledgeBaseService.getKnowledgeBase(id);
         
         Map<String, Object> result = new HashMap<>();
@@ -54,7 +54,7 @@ public class KnowledgeBaseController {
     }
 
     @DeleteMapping("/bases/{id}")
-    public Map<String, Object> deleteKnowledgeBase(@PathVariable String id) {
+    public Map<String, Object> deleteKnowledgeBase(@PathVariable("id") String id) {
         boolean success = knowledgeBaseService.deleteKnowledgeBase(id);
         
         Map<String, Object> result = new HashMap<>();
@@ -65,7 +65,7 @@ public class KnowledgeBaseController {
 
     @PostMapping("/bases/{kbId}/documents")
     public Map<String, Object> importDocument(
-            @PathVariable String kbId,
+            @PathVariable("kbId") String kbId,
             @RequestBody Map<String, String> request) {
         
         String title = request.get("title");
@@ -89,7 +89,7 @@ public class KnowledgeBaseController {
     }
 
     @GetMapping("/bases/{kbId}/documents")
-    public Map<String, Object> getDocuments(@PathVariable String kbId) {
+    public Map<String, Object> getDocuments(@PathVariable("kbId") String kbId) {
         List<KnowledgeBaseService.KnowledgeDocument> docs = knowledgeBaseService.getDocuments(kbId);
         
         Map<String, Object> result = new HashMap<>();
@@ -100,7 +100,7 @@ public class KnowledgeBaseController {
     }
 
     @DeleteMapping("/documents/{docId}")
-    public Map<String, Object> deleteDocument(@PathVariable String docId) {
+    public Map<String, Object> deleteDocument(@PathVariable("docId") String docId) {
         boolean success = knowledgeBaseService.deleteDocument(docId);
         
         Map<String, Object> result = new HashMap<>();
@@ -111,9 +111,9 @@ public class KnowledgeBaseController {
 
     @GetMapping("/bases/{kbId}/search")
     public Map<String, Object> search(
-            @PathVariable String kbId,
-            @RequestParam String query,
-            @RequestParam(defaultValue = "5") int topK) {
+            @PathVariable("kbId") String kbId,
+            @RequestParam("query") String query,
+            @RequestParam(name = "topK", defaultValue = "5") int topK) {
         
         List<KnowledgeBaseService.SearchResult> results = knowledgeBaseService.search(kbId, query, topK);
         
@@ -127,7 +127,7 @@ public class KnowledgeBaseController {
 
     @PostMapping("/bases/{kbId}/ask")
     public Map<String, Object> ask(
-            @PathVariable String kbId,
+            @PathVariable("kbId") String kbId,
             @RequestBody Map<String, String> request) {
         
         String question = request.get("question");
