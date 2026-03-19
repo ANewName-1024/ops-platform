@@ -1,16 +1,20 @@
 package com.example.ops.service.knowledge;
 
+import com.example.ops.service.knowledge.AIService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Knowledge base service
- * Supports document import, vectorization, semantic search
+ * Knowledge base service with AI integration
  */
 @Service
 public class KnowledgeBaseService {
+
+    @Autowired
+    private AIService aiService;
 
     private final Map<String, KnowledgeDocument> documents = new ConcurrentHashMap<>();
     private final Map<String, KnowledgeBase> knowledgeBases = new ConcurrentHashMap<>();
@@ -124,7 +128,7 @@ public class KnowledgeBaseService {
         KnowledgeBase kb = knowledgeBases.get(kbId);
         if (kb == null) return new ArrayList<>();
 
-        List<Float> queryEmbedding = generateSingleEmbedding(query);
+        List<Float> queryEmbedding = aiService.generateEmbedding(query);
         List<SearchResult> results = new ArrayList<>();
         
         for (String docId : kb.getDocumentIds()) {
@@ -144,6 +148,46 @@ public class KnowledgeBaseService {
         return results.subList(0, Math.min(topK, results.size()));
     }
 
+    /**
+     * AI-powered Q&A - combines search with LLM
+     */
+    public Map<String, Object> askWithAI(String kbId, String question) {
+        // First search for relevant context
+        List<SearchResult> results = search(kbId, question, 5);
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        if (results.isEmpty()) {
+            response.put("success", true);
+            response.put("question", question);
+            response.put("answer", "I couldn't find relevant information in the knowledge base. Please try a different question or add more documents.");
+            response.put("sources", 0);
+            return response;
+        }
+
+        // Build context from search results
+        StringBuilder context = new StringBuilder();
+        for (SearchResult r : results) {
+            context.append("- ").append(r.getContent()).append("\n\n");
+        }
+
+        // Use AI to generate answer
+        String prompt = "Based on the following context from the knowledge base, please answer the user's question.\n\n" +
+                       "Context:\n" + context.toString() + "\n\n" +
+                       "Question: " + question + "\n\n" +
+                       "Please provide a clear and helpful answer.";
+
+        AIService.ChatResponse aiResponse = aiService.chat(prompt);
+
+        response.put("success", true);
+        response.put("question", question);
+        response.put("answer", aiResponse.getContent());
+        response.put("sources", results.size());
+        response.put("context", results.stream().map(r -> r.getContent()).toList());
+        
+        return response;
+    }
+
     private List<String> splitIntoChunks(String content) {
         List<String> chunks = new ArrayList<>();
         int chunkSize = 500;
@@ -159,18 +203,9 @@ public class KnowledgeBaseService {
     private List<List<Float>> generateEmbeddings(List<String> texts) {
         List<List<Float>> embeddings = new ArrayList<>();
         for (String text : texts) {
-            embeddings.add(generateSingleEmbedding(text));
+            embeddings.add(aiService.generateEmbedding(text));
         }
         return embeddings;
-    }
-
-    private List<Float> generateSingleEmbedding(String text) {
-        Random random = new Random(text.hashCode());
-        List<Float> embedding = new ArrayList<>();
-        for (int i = 0; i < 384; i++) {
-            embedding.add(random.nextFloat());
-        }
-        return embedding;
     }
 
     private float cosineSimilarity(List<Float> a, List<Float> b) {

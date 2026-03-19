@@ -132,25 +132,8 @@ public class KnowledgeBaseController {
         
         String question = request.get("question");
         
-        List<KnowledgeBaseService.SearchResult> results = knowledgeBaseService.search(kbId, question, 3);
-        
-        StringBuilder answer = new StringBuilder();
-        if (results.isEmpty()) {
-            answer.append("Sorry, I could not find relevant information.");
-        } else {
-            answer.append("Based on the knowledge base, I found the following information:\n\n");
-            for (int i = 0; i < results.size(); i++) {
-                KnowledgeBaseService.SearchResult r = results.get(i);
-                answer.append(i + 1).append(". ").append(r.getContent()).append("\n\n");
-            }
-            answer.append("--- Above content from knowledge base retrieval");
-        }
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("question", question);
-        result.put("answer", answer.toString());
-        result.put("sources", results.size());
-        return result;
+        // Use AI-powered Q&A
+        Map<String, Object> aiResult = knowledgeBaseService.askWithAI(kbId, question);
+        return aiResult;
     }
 }
