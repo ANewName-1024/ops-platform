@@ -40,6 +40,25 @@ public class RbacController {
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
         result.put("roles", roles);
+        result.put("total", roles.size());
+        return result;
+    }
+
+    /**
+     * 获取角色详情
+     */
+    @GetMapping("/roles/{code}")
+    public Map<String, Object> getRole(@PathVariable String code) {
+        RbacService.Role role = rbacService.getRole(code);
+        Map<String, Object> result = new HashMap<>();
+        if (role != null) {
+            result.put("success", true);
+            result.put("role", role);
+            result.put("permissionCount", role.getPermissions().size());
+        } else {
+            result.put("success", false);
+            result.put("message", "Role not found");
+        }
         return result;
     }
 
@@ -48,28 +67,34 @@ public class RbacController {
      */
     @PostMapping("/roles")
     public Map<String, Object> addRole(@RequestBody Map<String, Object> request) {
+        String code = (String) request.get("code");
         String name = (String) request.get("name");
         @SuppressWarnings("unchecked")
         Set<String> permissions = new java.util.HashSet<>((List<String>) request.get("permissions"));
         
-        RbacService.Role role = new RbacService.Role(name, permissions);
+        RbacService.Role role = new RbacService.Role(code, name, permissions);
         rbacService.addRole(role);
         
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
-        result.put("message", "Role added");
+        result.put("message", "Role added: " + code);
         return result;
     }
 
     /**
      * 删除角色
      */
-    @DeleteMapping("/roles/{name}")
-    public Map<String, Object> deleteRole(@PathVariable String name) {
-        rbacService.deleteRole(name);
+    @DeleteMapping("/roles/{code}")
+    public Map<String, Object> deleteRole(@PathVariable String code) {
+        boolean success = rbacService.deleteRole(code);
         Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("message", "Role deleted");
+        if (success) {
+            result.put("success", true);
+            result.put("message", "Role deleted: " + code);
+        } else {
+            result.put("success", false);
+            result.put("message", "Cannot delete predefined role: " + code);
+        }
         return result;
     }
 
@@ -81,12 +106,28 @@ public class RbacController {
             @PathVariable String userId,
             @RequestBody Map<String, String> request) {
         
-        String roleName = request.get("roleName");
-        rbacService.assignRole(userId, roleName);
+        String roleCode = request.get("roleCode");
+        rbacService.assignRole(userId, roleCode);
         
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
-        result.put("message", "Role assigned to user");
+        result.put("message", "Role " + roleCode + " assigned to user " + userId);
+        return result;
+    }
+
+    /**
+     * 移除用户角色
+     */
+    @DeleteMapping("/users/{userId}/roles/{roleCode}")
+    public Map<String, Object> removeUserRole(
+            @PathVariable String userId,
+            @PathVariable String roleCode) {
+        
+        rbacService.removeRole(userId, roleCode);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "Role " + roleCode + " removed from user " + userId);
         return result;
     }
 
@@ -98,7 +139,23 @@ public class RbacController {
         Set<String> roles = rbacService.getUserRoles(userId);
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
+        result.put("userId", userId);
         result.put("roles", roles);
+        result.put("total", roles.size());
+        return result;
+    }
+
+    /**
+     * 获取用户权限
+     */
+    @GetMapping("/users/{userId}/permissions")
+    public Map<String, Object> getUserPermissions(@PathVariable String userId) {
+        Set<String> permissions = rbacService.getUserPermissions(userId);
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("userId", userId);
+        result.put("permissions", permissions);
+        result.put("total", permissions.size());
         return result;
     }
 
@@ -113,6 +170,8 @@ public class RbacController {
         boolean hasPermission = rbacService.hasPermission(userId, permission);
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
+        result.put("userId", userId);
+        result.put("permission", permission);
         result.put("hasPermission", hasPermission);
         return result;
     }
