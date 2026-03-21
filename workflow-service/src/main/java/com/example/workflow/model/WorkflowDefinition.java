@@ -17,7 +17,8 @@ public class WorkflowDefinition {
     @Column(columnDefinition = "TEXT")
     private String description;
     
-    @Column(columnDefinition = "JSONB")
+    @Column(name = "definition", columnDefinition = "jsonb")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private String definition;
     
     @Column(nullable = false)

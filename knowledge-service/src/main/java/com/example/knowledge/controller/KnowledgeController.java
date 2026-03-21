@@ -81,7 +81,7 @@ public class KnowledgeController {
      */
     @PostMapping("/bases")
     public Map<String, Object> createBase(@RequestBody Map<String, Object> params) {
-        Long id = kbIdCounter.getAndIncrement();
+        Long id = Long.valueOf(kbIdCounter.getAndIncrement());
         Map<String, Object> kb = new HashMap<>();
         kb.put("id", id);
         kb.put("name", params.get("name"));
@@ -178,7 +178,7 @@ public class KnowledgeController {
      * POST /knowledge/bases/{kbId}/documents
      */
     @PostMapping("/bases/{kbId}/documents")
-    public Map<String, Object> addDocument(@PathVariable Long kbId, @RequestBody Map<String, Object> params) {
+    public Map<String, Object> addDocument(@PathVariable("kbId") Long kbId, @RequestBody Map<String, Object> params) {
         if (!knowledgeBases.containsKey(kbId)) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "知识库不存在");
