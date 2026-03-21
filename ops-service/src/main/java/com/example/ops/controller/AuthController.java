@@ -37,14 +37,14 @@ public class AuthController {
     private static final Map<String, UserCredential> USERS = new HashMap<>();
     
     static {
-        // 默认用户: admin (密码: Admin@123456)
-        USERS.put("admin", new UserCredential(1L, "admin", passwordEncoder.encode("Admin@123456"), 
+        // 默认用户: admin (密码: Ops@2024!)
+        USERS.put("admin", new UserCredential(1L, "admin", passwordEncoder.encode("Ops@2024!"), 
                 List.of("ADMIN"), List.of("ops:view", "ops:manage", "admin:manage")));
-        // 运维人员: ops (密码: Ops@123456)
-        USERS.put("ops", new UserCredential(2L, "ops", passwordEncoder.encode("Ops@123456"), 
+        // 运维人员: ops (密码: Ops@2024!)
+        USERS.put("ops", new UserCredential(2L, "ops", passwordEncoder.encode("Ops@2024!"), 
                 List.of("OPS"), List.of("ops:view", "ops:manage")));
-        // 监控人员: monitor (密码: Monitor@123456)
-        USERS.put("monitor", new UserCredential(3L, "monitor", passwordEncoder.encode("Monitor@123456"), 
+        // 监控人员: monitor (密码: Ops@2024!)
+        USERS.put("monitor", new UserCredential(3L, "monitor", passwordEncoder.encode("Ops@2024!"), 
                 List.of("MONITOR"), List.of("ops:view")));
     }
 

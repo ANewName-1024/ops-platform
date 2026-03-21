@@ -110,9 +110,6 @@
             <el-option label="普通用户" value="USER" />
           </el-select>
         </el-form-item>
-        <el-form-item label="密码" prop="password" v-if="!isEdit">
-          <el-input v-model="form.password" type="password" show-password placeholder="请输入密码" />
-        </el-form-item>
         <el-form-item label="状态">
           <el-switch v-model="form.enabled" active-text="启用" inactive-text="禁用" />
         </el-form-item>
