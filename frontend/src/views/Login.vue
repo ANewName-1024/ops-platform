@@ -50,12 +50,6 @@
           </el-button>
         </el-form-item>
       </el-form>
-      
-      <div class="login-footer">
-        <p class="demo-account">
-          演示账号: admin / Admin@123456
-        </p>
-      </div>
     </div>
   </div>
 </template>
@@ -153,15 +147,5 @@ const handleLogin = async () => {
 
 .login-button {
   width: 100%;
-}
-
-.login-footer {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.demo-account {
-  color: #999;
-  font-size: 12px;
 }
 </style>
