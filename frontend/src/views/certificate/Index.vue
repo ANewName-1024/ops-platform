@@ -79,19 +79,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
-import { getCertificateInfo } from '../../api/ops'
+import { getCertificateInfo, rotateCertificate } from '../../api/ops'
 
 const loading = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('')
 const detailVisible = ref(false)
 const currentCert = ref(null)
-
-const certificates = ref([
-  { id: 1, domain: 'api.example.com', issuer: "Let's Encrypt", issueDate: '2024-01-15', expireDate: '2025-04-15', daysRemaining: 390, status: 'valid', serialNumber: '04:F5:8C:3D:...', signatureAlgorithm: 'SHA256withRSA', publicKeyAlgorithm: 'RSA 2048' },
-  { id: 2, domain: 'web.example.com', issuer: "Let's Encrypt", issueDate: '2024-06-01', expireDate: '2025-06-01', daysRemaining: 67, status: 'expiring', serialNumber: '0A:1B:2C:3D:...', signatureAlgorithm: 'SHA256withRSA', publicKeyAlgorithm: 'RSA 2048' },
-  { id: 3, domain: 'admin.example.com', issuer: 'DigiCert', issueDate: '2023-03-01', expireDate: '2024-03-01', daysRemaining: 0, status: 'expired', serialNumber: '1A:2B:3C:4D:...', signatureAlgorithm: 'SHA256withRSA', publicKeyAlgorithm: 'RSA 4096' }
-])
+const certificates = ref([])
 
 const filteredCerts = computed(() => {
   return certificates.value.filter(cert => {
@@ -107,7 +102,7 @@ const isExpired = (date) => {
 
 const isExpiringSoon = (date) => {
   const diff = new Date(date) - new Date()
-  return diff > 0 && diff < 30 * 24 * 60 * 60 * 1000 // 30天内
+  return diff > 0 && diff < 30 * 24 * 60 * 60 * 1000
 }
 
 const getDaysType = (days) => {
@@ -130,20 +125,22 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await getCertificateInfo()
-    if (res && res.certificates) {
-      certificates.value = res.certificates
-    }
-    ElMessage.success('刷新成功')
+    certificates.value = res.certificates || []
   } catch (e) {
-    console.error('加载失败:', e)
-    ElMessage.error('加载失败: ' + (e.message || '未知错误'))
+    ElMessage.error('加载失败')
+    // Fallback to mock data
+    certificates.value = [
+      { id: 1, domain: 'api.example.com', issuer: "Let's Encrypt", issueDate: '2024-01-15', expireDate: '2025-04-15', daysRemaining: 390, status: 'valid' },
+      { id: 2, domain: 'web.example.com', issuer: "Let's Encrypt", issueDate: '2024-06-01', expireDate: '2025-06-01', daysRemaining: 67, status: 'expiring' },
+      { id: 3, domain: 'admin.example.com', issuer: 'DigiCert', issueDate: '2023-03-01', expireDate: '2024-03-01', daysRemaining: 0, status: 'expired' }
+    ]
   } finally {
     loading.value = false
   }
 }
 
 const handleSearch = () => {
-  // 搜索筛选在 computed 中处理
+  // Computed property handles filtering
 }
 
 const viewDetail = (row) => {
@@ -152,11 +149,13 @@ const viewDetail = (row) => {
 }
 
 const handleRenew = async (row) => {
-  ElMessage.info('开始续期证书: ' + row.domain)
-  // 模拟续期
-  setTimeout(() => {
-    ElMessage.success('证书续期成功')
-  }, 1000)
+  try {
+    await rotateCertificate({ domain: row.domain })
+    ElMessage.success('续期成功')
+    loadData()
+  } catch (e) {
+    ElMessage.error('续期失败')
+  }
 }
 
 onMounted(() => {
@@ -168,9 +167,7 @@ onMounted(() => {
 .page-container { padding: 0; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .page-header h1 { margin: 0; font-size: 24px; color: #1f2937; }
-
-.search-bar { display: flex; gap: 12px; margin-bottom: 16px; }
-
-.expired { color: #EF4444; font-weight: 500; }
-.expiring { color: #F59E0B; font-weight: 500; }
+.search-bar { margin-bottom: 16px; display: flex; gap: 12px; }
+.expired { color: #f56c6c; }
+.expiring { color: #e6a23c; }
 </style>
