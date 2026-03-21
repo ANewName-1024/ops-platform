@@ -1,0 +1,68 @@
+{
+  "knowledgeBases": [
+    {
+      "name": "Operations Docs",
+      "description": "System operations documentation",
+      "documents": [
+        {
+          "title": "Deployment Guide",
+          "content": "# Deployment Guide\n\n## Requirements\n- JDK 21+\n- Maven 3.9+\n- PostgreSQL 12+\n\n## Build\n```bash\nmvn clean package -DskipTests\n```\n\n## Run\n```bash\njava -jar target/service.jar --server.port=8083\n```\n\n## Verify\nAccess http://localhost:8083/ops/health",
+          "type": "markdown"
+        },
+        {
+          "title": "Nginx Config",
+          "content": "# Nginx Configuration\n\n```nginx\nserver {\n    listen 80;\n    \n    location / {\n        root D:/temp/frontend;\n        index index.html;\n    }\n    \n    location /ops/ {\n        proxy_pass http://127.0.0.1:8083/ops/;\n    }\n}\n```",
+          "type": "markdown"
+        },
+        {
+          "title": "Database Backup",
+          "content": "# Database Backup\n\n## Backup\n```bash\npg_dump -h 8.137.116.121 -p 8432 -U business business_db > backup.sql\n```\n\n## Restore\n```bash\npsql -h 8.137.116.121 -p 8432 -U business business_db < backup.sql\n```",
+          "type": "markdown"
+        }
+      ]
+    },
+    {
+      "name": "Troubleshooting",
+      "description": "Common issues and solutions",
+      "documents": [
+        {
+          "title": "DB Connection Timeout",
+          "content": "# DB Connection Timeout\n\n## Cause\n1. Connection pool exhausted\n2. Network issue\n3. DB server load high\n\n## Solution\n1. Restart PostgreSQL\n2. Check connection pool settings\n3. Optimize slow queries",
+          "type": "markdown"
+        },
+        {
+          "title": "Service Start Failed",
+          "content": "# Service Start Failed\n\n## Common Causes\n1. Port in use\n2. Config error\n3. Dependency not running\n\n## Debug\n1. Check port: netstat -ano | findstr 8083\n2. Check logs\n3. Verify config",
+          "type": "markdown"
+        }
+      ]
+    },
+    {
+      "name": "Technical Standards",
+      "description": "Development standards",
+      "documents": [
+        {
+          "title": "Java Code Standards",
+          "content": "# Java Code Standards\n\n## Naming\n- Classes: UpperCamelCase\n- Methods: lowerCamelCase\n- Constants: UPPER_SNAKE_CASE\n\n## Format\n- 4 spaces indent\n- Max 120 chars per line",
+          "type": "markdown"
+        },
+        {
+          "title": "Git Commit Standards",
+          "content": "# Git Commit Standards\n\n## Types\n- feat: New feature\n- fix: Bug fix\n- docs: Documentation\n- refactor: Code refactor\n\n## Example\n```bash\ngit commit -m \"feat(user): add login feature\"\n```",
+          "type": "markdown"
+        }
+      ]
+    },
+    {
+      "name": "Incident Response",
+      "description": "Emergency response plans",
+      "documents": [
+        {
+          "title": "Service Outage Plan",
+          "content": "# Service Outage Response\n\n## Severity Levels\n- P1: Critical (15min)\n- P2: Major (30min)\n- Minor (2hours)\n\n## Process\n1. Detect\n2. Confirm\n3. Respond\n4. Resolve\n5. Review",
+          "type": "markdown"
+        }
+      ]
+    }
+  ]
+}
