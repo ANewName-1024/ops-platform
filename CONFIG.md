@@ -6,35 +6,37 @@
 ┌─────────────────────────────────────────────────┐
 │                  用户浏览器                      │
 └─────────────────┬───────────────────────────────┘
-                  │ http://localhost:80
+                  │ http://192.168.2.32:80
                   ▼
 ┌─────────────────────────────────────────────────┐
 │  Nginx (端口 80)                                 │
 │  - 静态文件服务                                  │
-│  - API 代理到 Gateway                            │
-└─────────────────┬───────────────────────────────┘
-                  │ /ops/** -> localhost:8083
-                  ▼
-┌─────────────────────────────────────────────────┐
-│  Gateway (端口 8080)                             │
-│  - 统一入口                                      │
-│  - 路由到各微服务                                │
 └─────────────────┬───────────────────────────────┘
                   │
-        ┌─────────┼─────────┐
-        ▼         ▼         ▼
-   ┌────────┐ ┌────────┐ ┌────────┐
-   │  OPS   │ │ User   │ │Knowl-  │
-   │ :8083  │ │ :8081  │ │edge:8092│
-   └────────┘ └────────┘ └────────┘
+        ┌─────────┼─────────┬─────────┐
+        ▼         ▼         ▼         ▼
+   ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+   │  OPS   │ │ User   │ │Workflow│ │Knowl-  │
+   │ :8083  │ │ :8081  │ │ :8091  │ │ :8092  │
+   └────────┘ └────────┘ └────────┘ └────────┘
+        │                   │         │
+        ▼                   ▼         ▼
+   ┌────────┐         ┌────────┐ ┌────────┐
+   │Notifi- │         │ Chat   │ │Knowledge
+   │ cation │         │ :8093  │ │ :8092  │
+   │ :8094  │         └────────┘ └────────┘
+   └────────┘
 ```
 
-## 服务地址
+## 当前运行状态
 
 | 服务 | 地址 | 端口 | 状态 |
 |------|------|------|------|
-| 前端 (Nginx) | http://192.168.2.32 | 80 | 需保持运行 |
-| 后端 (ops-service) | http://192.168.2.32:8083 | 8083 | 需保持运行 |
+| 前端 (Nginx) | http://192.168.2.32 | 80 | ✅ 运行中 |
+| ops-service | http://192.168.2.32 | 8083 | ✅ 运行中 |
+| workflow-service | http://192.168.2.32 | 8091 | ✅ 运行中 |
+| knowledge-service | http://192.168.2.32 | 8092 | ✅ 运行中 |
+| notification-service | http://192.168.2.32 | 8094 | ✅ 运行中 |
 
 ## 登录凭据
 - 用户名: `admin`
@@ -42,156 +44,140 @@
 
 ## 快速启动
 
-### 开发模式
-```bash
-cd D:\.openclaw\workspace\temp-project\ops-service
-mvn spring-boot:run -DskipTests
-```
-
 ### 生产模式 (推荐)
 ```bash
-D:\.openclaw\workspace\temp-project\scripts\start-prod.bat
+# 启动所有服务
+java -jar D:\.openclaw\workspace\temp-project\ops-service\target\ops-service-2.2.0.jar --server.port=8083
+java -jar D:\.openclaw\workspace\temp-project\workflow-service\target\workflow-service-2.2.0.jar --server.port=8091
+java -jar D:\.openclaw\workspace\temp-project\knowledge-service\target\knowledge-service-2.2.0.jar --server.port=8092
+java -jar D:\.openclaw\workspace\temp-project\notification-service\target\notification-service-2.2.0.jar --server.port=8094
 ```
 
-### 启动顺序
-1. 确保 Nginx 运行中 (端口 80)
-2. 运行生产启动脚本
-3. 访问 http://192.168.2.32
+### 打包命令
+```bash
+cd D:\.openclaw\workspace\temp-project\[service-name]
+mvn clean package -DskipTests
+```
 
 ## 前端配置
 
 ### .env 文件位置
 `D:\.openclaw\workspace\temp-project\frontend\.env`
 
-### 正确配置
+### 当前配置
 ```
-# API 通过 nginx 代理
-VITE_API_BASE_URL=/ops
+VITE_API_BASE_URL=http://localhost:8083
+VITE_TOKEN_KEY=ops_token
 ```
 
-### ⚠️ 注意事项
-- **不要**使用 `http://192.168.2.32:8083` - 会导致跨域问题
-- **必须**使用 `/ops` - 通过 nginx 代理到后端
-
-## 服务管理脚本
-
-### 脚本位置
-`D:\.openclaw\workspace\temp-project\scripts\`
-
-| 脚本 | 功能 |
-|------|------|
-| start-prod.bat | 生产模式启动 (JAR 包运行，更稳定) |
-| start-services.bat | 开发模式启动 (Maven 运行) |
-| health-check.bat | 健康检查 (自动检测服务状态) |
-
-### 使用健康检查
+### 构建部署
 ```bash
-D:\.openclaw\workspace\temp-project\scripts\health-check.bat 30
+cd D:\.openclaw\workspace\temp-project\frontend
+npm run build
+Copy-Item -Recurse dist\* D:\temp\frontend\
 ```
-参数 30 表示每 30 秒检查一次
+
+## 端口规划
+
+| 端口 | 服务 | 说明 |
+|------|------|------|
+| 80 | Nginx | 前端页面 |
+| 8080 | Gateway | API 网关 (可选) |
+| 8081 | user-service | 用户服务 |
+| 8083 | ops-service | 运维服务 |
+| 8091 | workflow-service | 工作流服务 |
+| 8092 | knowledge-service | 知识库服务 |
+| 8093 | chat-service | AI对话服务 |
+| 8094 | notification-service | 通知服务 |
+
+## 数据库
+
+- 主机: 8.137.116.121
+- 端口: 8432
+- 数据库: business_db
+- 用户: business
+- 密码: NewPass2024
+
+## API 端点
+
+### ops-service (8083)
+| API | 方法 | 说明 |
+|-----|------|------|
+| `/ops/auth/login` | POST | 登录 |
+| `/ops/dashboard/overview` | GET | 仪表盘概览 |
+| `/ops/heal/strategies` | GET | 自愈策略 |
+| `/ops/releases` | GET | 灰度发布 |
+| `/ops/cert/info` | GET | 证书信息 |
+| `/ops/users` | GET | 用户列表 |
+| `/ops/system/config` | GET | 系统配置 |
+
+### workflow-service (8091)
+| API | 方法 | 说明 |
+|-----|------|------|
+| `/workflow` | GET | 工作流列表 |
+| `/workflow` | POST | 创建工作流 |
+| `/workflow/{id}` | GET | 工作流详情 |
+| `/workflow/{id}` | PUT | 更新工作流 |
+| `/workflow/{id}` | DELETE | 删除工作流 |
+| `/workflow/{id}/execute` | POST | 执行工作流 |
+
+### knowledge-service (8092)
+| API | 方法 | 说明 |
+|-----|------|------|
+| `/knowledge/bases` | GET | 知识库列表 |
+| `/knowledge/bases` | POST | 创建知识库 |
+| `/knowledge/bases/{id}` | PUT | 更新知识库 |
+| `/knowledge/bases/{id}` | DELETE | 删除知识库 |
+| `/knowledge/bases/{id}/documents` | GET | 文档列表 |
+| `/knowledge/documents/{id}` | DELETE | 删除文档 |
+| `/knowledge/search` | GET | 搜索 |
+
+### notification-service (8094)
+| API | 方法 | 说明 |
+|-----|------|------|
+| `/notification` | GET | 通知列表 |
+| `/notification` | POST | 发送通知 |
+| `/notification/{id}/read` | PUT | 标记已读 |
+| `/notification/read-all` | PUT | 全部标记已读 |
+| `/notification/unread-count` | GET | 未读数量 |
 
 ## Nginx 配置
 
 ### 配置文件
 `D:\.openclaw\workspace\conf\nginx.conf`
 
-### 核心配置
-```nginx
-# 前端静态文件
-location / {
-    root   D:/temp/frontend;
-    index  index.html;
-    try_files $uri $uri/ /index.html;
-}
-
-# API 代理到后端
-location /ops/ {
-    proxy_pass http://127.0.0.1:8083/ops/;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-}
-```
-
-## 服务状态检查
-
-### 检查后端
-```bash
-netstat -ano | findstr "8083"
-```
-
-### 检查 Nginx
-```bash
-netstat -ano | findstr ":80"
-```
-
-### 测试登录
-```bash
-curl -X POST http://localhost:8083/ops/auth/login ^
-  -H "Content-Type: application/json" ^
-  -d "{\"username\":\"admin\",\"password\":\"Admin@123456\"}"
-```
-
-### 测试前端页面
-```bash
-curl http://localhost
-```
-
-## 端口管理
-
-### 端口使用规范
-
-| 端口 | 服务 | 说明 |
-|------|------|------|
-| 80 | Nginx | 前端页面 |
-| 8080 | Gateway | API 网关 |
-| 8081 | User Service | 用户服务 |
-| 8083 | OPS Service | 运维服务 |
-| 8092 | Knowledge Service | 知识库服务 |
-
-### 端口管理脚本
-
-```bash
-# 列出所有相关端口
-D:\.openclaw\workspace\temp-project\scripts\port-manager.bat list
-
-# 检查端口占用
-D:\.openclaw\workspace\temp-project\scripts\port-manager.bat check 8083
-
-# 杀掉占用端口的进程
-D:\.openclaw\workspace\temp-project\scripts\port-manager.bat kill 8083
-```
-
-### 智能启动脚本
-
-推荐使用 `start-smart.bat`，会自动检测并清理端口冲突：
-
-```bash
-D:\.openclaw\workspace\temp-project\scripts\start-smart.bat
-```
-
-### 避免端口冲突的原则
-
-1. **启动前检查** - 始终使用端口管理脚本检查占用
-2. **单一入口** - 使用统一的启动脚本
-3. **正确关闭** - 先杀进程再启动新服务
-4. **等待释放** - 杀掉进程后等待 2-3 秒再启动
+### 前端静态文件部署位置
+`D:\temp\frontend\`
 
 ## 常见问题
 
-### Q: 登录失败怎么办？
-1. 检查后端是否运行: `netstat -ano | findstr "8083"`
-2. 检查 .env 配置是否为 `/ops`
-3. 重启后端服务
+### Q: 数据库连接失败
+- 原因: PostgreSQL 连接数满
+- 解决: SSH 到服务器重启 PostgreSQL
+```bash
+ssh -p 2222 -i C:\Users\Administrator\aliyun_key.pem root@8.137.116.121
+systemctl restart postgresql
+```
 
-### Q: 页面加载失败？
-1. 检查 Nginx 是否运行
-2. 检查前端文件是否部署: `D:\temp\frontend\index.html`
-3. 查看浏览器控制台错误
+### Q: 服务启动失败
+- 检查端口是否被占用: `netstat -ano | findstr "端口"`
+- 杀掉占用进程: `taskkill /F /PID <PID>`
 
-### Q: 后端服务总是停止？
-1. 使用生产模式启动 (start-prod.bat)
-2. 运行健康检查脚本 (health-check.bat)
-
-### Q: 端口被占用怎么办？
-1. 运行 `port-manager.bat kill 8083` 杀掉占用进程
-2. 或使用 `start-smart.bat` 自动清理
+### Q: JAR 文件无法运行
+- 确保 POM 配置了 repackage:
+```xml
+<plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+    <configuration>
+        <mainClass>com.example.xxx.XXXApplication</mainClass>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>repackage</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
