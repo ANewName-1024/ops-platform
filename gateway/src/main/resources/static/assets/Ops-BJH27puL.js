@@ -1,0 +1,1 @@
+import{a as e,d as t,f as n,l as r,m as i,n as a,s as o}from"./index-B4KHnDLD.js";var s={},c={class:`ops`};function l(a,s){let l=n(`el-card`);return t(),o(`div`,c,[s[1]||=e(`h1`,null,`运维中心`,-1),r(l,null,{default:i(()=>[...s[0]||=[e(`p`,null,`运维任务、自愈策略、灰度发布等功能...`,-1)]]),_:1})])}var u=a(s,[[`render`,l],[`__scopeId`,`data-v-1970c9ea`]]);export{u as default};

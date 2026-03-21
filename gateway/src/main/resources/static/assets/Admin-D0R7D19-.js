@@ -1,0 +1,1 @@
+import{a as e,d as t,f as n,l as r,m as i,n as a,s as o}from"./index-B4KHnDLD.js";var s={},c={class:`admin`};function l(a,s){let l=n(`el-card`);return t(),o(`div`,c,[s[1]||=e(`h1`,null,`系统管理`,-1),r(l,null,{default:i(()=>[...s[0]||=[e(`p`,null,`用户管理、角色权限、系统配置...`,-1)]]),_:1})])}var u=a(s,[[`render`,l],[`__scopeId`,`data-v-3771978b`]]);export{u as default};

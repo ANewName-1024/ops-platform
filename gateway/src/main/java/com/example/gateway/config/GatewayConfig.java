@@ -19,7 +19,18 @@ public class GatewayConfig {
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
-                // 动态路由由 Spring Cloud Gateway 自动发现
+                // user-service
+                .route("user-service", r -> r
+                        .path("/user/**")
+                        .uri("http://localhost:8081"))
+                // config-service
+                .route("config-service", r -> r
+                        .path("/config/**")
+                        .uri("http://localhost:8082"))
+                // ops-service
+                .route("ops-service", r -> r
+                        .path("/ops/**")
+                        .uri("http://localhost:8083"))
                 .build();
     }
 }

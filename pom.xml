@@ -15,11 +15,14 @@
     <modules>
         <module>common</module>
         <module>testing</module>
-        <module>eureka-server</module>
         <module>gateway</module>
         <module>user-service</module>
         <module>config-service</module>
         <module>ops-service</module>
+        <module>workflow-service</module>
+        <module>knowledge-service</module>
+        <module>notification-service</module>
+        <module>chat-service</module>
     </modules>
 
     <properties>

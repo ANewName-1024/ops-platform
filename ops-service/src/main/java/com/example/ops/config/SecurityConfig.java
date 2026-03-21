@@ -28,6 +28,14 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(request -> {
+                var corsConfig = new org.springframework.web.cors.CorsConfiguration();
+                corsConfig.addAllowedOriginPattern("*");
+                corsConfig.addAllowedHeader("*");
+                corsConfig.addAllowedMethod("*");
+                corsConfig.setAllowCredentials(true);
+                return corsConfig;
+            }))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // 认证接口公开
@@ -42,12 +50,16 @@ public class SecurityConfig {
                 .requestMatchers("/ops/releases/**").permitAll()
                 // RBAC 权限 (开发测试期间公开)
                 .requestMatchers("/ops/rbac/**").permitAll()
+                // 用户管理 (开发测试期间公开)
+                .requestMatchers("/ops/users/**").permitAll()
+                // 系统配置 (开发测试期间公开)
+                .requestMatchers("/ops/system/**").permitAll()
                 // 工作流 (开发测试期间公开)
                 .requestMatchers("/ops/workflows/**").permitAll()
                 // 通知 (开发测试期间公开)
                 .requestMatchers("/ops/notifications/**").permitAll()
-                // 知识库 (开发测试期间公开)
-                .requestMatchers("/ops/knowledge/**").permitAll()
+                // 知识库 (需要认证)
+                .requestMatchers("/ops/knowledge/**").authenticated()
                 // AI Chat (开发测试期间公开)
                 .requestMatchers("/ops/chat/**").permitAll()
                 // AI (开发测试期间公开)
